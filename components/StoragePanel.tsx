@@ -104,6 +104,12 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
                   {entry.value || <em className="text-slate-400">empty</em>}
                 </div>
               </div>
+              <Button
+                title="Copy value"
+                onClick={() => run(() => navigator.clipboard.writeText(entry.value), `Copied ${entry.key}`)}
+              >
+                Copy
+              </Button>
               <Button onClick={() => setEditing(entry.key)}>Edit</Button>
               <Button
                 variant="danger"

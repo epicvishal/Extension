@@ -126,6 +126,12 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
                   {c.value || <em className="text-slate-400">empty</em>}
                 </div>
               </div>
+              <Button
+                title="Copy value"
+                onClick={() => run(() => navigator.clipboard.writeText(c.value), `Copied ${c.name}`)}
+              >
+                Copy
+              </Button>
               <Button onClick={() => setEditing(c)}>Edit</Button>
               <Button variant="danger" onClick={() => run(() => removeCookie(c), `Deleted ${c.name}`)}>
                 ✕
