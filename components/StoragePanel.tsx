@@ -32,6 +32,7 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
     (e) => e.key.toLowerCase().includes(query) || e.value.toLowerCase().includes(query),
   );
   const selectedEntries = entries.filter((e) => selected.has(e.key));
+  const toCopy = selectedEntries.length ? selectedEntries : visible;
 
   const run = async (action: () => Promise<unknown>, done?: string) => {
     try {
@@ -61,9 +62,9 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
 
   const copySelected = () =>
     run(async () => {
-      const data = Object.fromEntries(selectedEntries.map((e) => [e.key, e.value]));
+      const data = Object.fromEntries(toCopy.map((e) => [e.key, e.value]));
       await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    }, `Copied ${selectedEntries.length} item(s) as JSON`);
+    }, `Copied ${toCopy.length} item(s) as JSON`);
 
   return (
     <div>

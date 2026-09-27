@@ -32,8 +32,8 @@ export function ListToolbar(props: Props) {
         + Add
       </Button>
       {props.onCopySelected && (
-        <Button disabled={!props.selectedCount} onClick={props.onCopySelected}>
-          Copy ({props.selectedCount})
+        <Button disabled={!props.total} onClick={props.onCopySelected} title="Copy as JSON">
+          {props.selectedCount ? `Copy (${props.selectedCount})` : 'Copy all'}
         </Button>
       )}
       <Button variant="danger" disabled={!props.selectedCount} onClick={props.onDeleteSelected}>

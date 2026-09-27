@@ -39,6 +39,7 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
     (c) => c.name.toLowerCase().includes(query) || c.value.toLowerCase().includes(query),
   );
   const selectedCookies = cookies.filter((c) => selected.has(cookieKey(c)));
+  const toCopy = selectedCookies.length ? selectedCookies : visible;
 
   const run = async (action: () => Promise<void>, done?: string) => {
     try {
@@ -65,7 +66,7 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
 
   const copySelected = () =>
     run(async () => {
-      const data = selectedCookies.map(({ name, value, domain, path, secure, httpOnly, sameSite, expirationDate }) => ({
+      const data = toCopy.map(({ name, value, domain, path, secure, httpOnly, sameSite, expirationDate }) => ({
         name,
         value,
         domain,
@@ -76,7 +77,7 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
         expirationDate,
       }));
       await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    }, `Copied ${selectedCookies.length} cookie(s) as JSON`);
+    }, `Copied ${toCopy.length} cookie(s) as JSON`);
 
   return (
     <div>

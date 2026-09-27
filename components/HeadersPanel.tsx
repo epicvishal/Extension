@@ -11,6 +11,7 @@ export function HeadersPanel({ hostname }: { hostname: string }) {
   const [filter, setFilter] = useState('');
   const [editing, setEditing] = useState<number | 'new' | null>(null);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const { selected, toggle, setAll, clear } = useSelection();
 
   useEffect(() => {
@@ -43,6 +44,23 @@ export function HeadersPanel({ hostname }: { hostname: string }) {
     if (await commit(next)) setEditing(null);
   };
 
+  const copy = async (text: string, done: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setError('');
+      setInfo(done);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  };
+
+  const copySelected = () => {
+    const picked = rules.filter((r) => selected.has(String(r.id)));
+    const toCopy = picked.length ? picked : visible;
+    const data = toCopy.map(({ domain, name, value, enabled }) => ({ domain, name, value, enabled }));
+    copy(JSON.stringify(data, null, 2), `Copied ${toCopy.length} header(s) as JSON`);
+  };
+
   const deleteSelected = async () => {
     if (await commit(rules.filter((r) => !selected.has(String(r.id))))) clear();
   };
@@ -50,6 +68,7 @@ export function HeadersPanel({ hostname }: { hostname: string }) {
   return (
     <div>
       {error && <Notice tone="error">{error}</Notice>}
+      {info && <Notice tone="info">{info}</Notice>}
       <Notice tone="info">
         Enabled headers are added to every request to their domain. Reload the page to apply.
       </Notice>
@@ -61,6 +80,7 @@ export function HeadersPanel({ hostname }: { hostname: string }) {
         onToggleAll={(on) => setAll(visible.map((r) => String(r.id)), on)}
         onAdd={() => setEditing('new')}
         onDeleteSelected={deleteSelected}
+        onCopySelected={copySelected}
       />
       {editing === 'new' && (
         <HeaderForm
@@ -99,6 +119,9 @@ export function HeadersPanel({ hostname }: { hostname: string }) {
                 onClick={() => commit(rules.map((x) => (x.id === r.id ? { ...x, enabled: !x.enabled } : x)))}
               >
                 {r.enabled ? 'On' : 'Off'}
+              </Button>
+              <Button title="Copy value" onClick={() => copy(r.value, `Copied ${r.name}`)}>
+                Copy
               </Button>
               <Button onClick={() => setEditing(r.id)}>Edit</Button>
               <Button variant="danger" onClick={() => commit(rules.filter((x) => x.id !== r.id))}>
