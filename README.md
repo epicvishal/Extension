@@ -10,3 +10,4 @@ Browser extension (Manifest V3) built with WXT + React + TypeScript + Tailwind.
 
 ## Load manually
 `edge://extensions` → Developer mode → Load unpacked → select `.output/edge-mv3`.
+# REPO
