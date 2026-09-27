@@ -19,6 +19,12 @@ Built with WXT + React + TypeScript + Tailwind.
 ## Load manually
 `edge://extensions` → Developer mode → Load unpacked → select `.output/edge-mv3`.
 
+## Publishing (Edge Add-ons, free)
+- Store text, permission reasons and reviewer notes: `store/listing.md`
+- Logo (300×300): `store/logo-300.png`; screenshots (1280×800): `store/screenshots/`
+- Icon source: `store/icon.svg`
+- Privacy policy (GitHub Pages from `docs/`): https://epicvishal.github.io/Extension/privacy.html
+
 ## Layout
 - `entrypoints/popup/` – popup shell and tabs
 - `components/` – panels (cookies, storage, headers), forms and shared UI

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site Data Editor – Privacy Policy</title>
+<style>
+  :root { color-scheme: light dark; --fg: #151a2d; --muted: #5f6680; --bg: #f6f7fb; --card: #fff; --accent: #4f46e5; --border: #e1e4ec; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #e8eaf2; --muted: #a0a6bd; --bg: #10131d; --card: #181c29; --accent: #8b85ff; --border: #2c3246; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 40px 16px; }
+  main { max-width: 720px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px clamp(20px, 5vw, 48px); }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  header img { width: 48px; height: 48px; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 0; }
+  h2 { font-size: 18px; margin: 28px 0 6px; }
+  p, li { color: var(--fg); }
+  .meta { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+  a { color: var(--accent); }
+  .summary { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; margin: 20px 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img src="logo-300.png" alt="">
+    <h1>Site Data Editor<br><span style="font-size:18px;font-weight:500;color:var(--muted)">Privacy Policy</span></h1>
+  </header>
+  <p class="meta">Last updated: 27 September 2026</p>
+
+  <p class="summary"><strong>In short:</strong> Site Data Editor does not collect, send, sell or share any data. Everything it reads or changes stays in your own browser.</p>
+
+  <h2>What the extension does</h2>
+  <p>Site Data Editor is a developer tool. When you open its popup, it shows the cookies, local storage and session storage of the website in your current tab, and lets you add, edit, copy and delete them. It can also add custom HTTP request headers that you define for a domain.</p>
+
+  <h2>Data the extension accesses</h2>
+  <ul>
+    <li><strong>Cookies</strong> of the website in the active tab, read and changed only when you use the popup.</li>
+    <li><strong>Local storage and session storage</strong> of the website in the active tab, read and changed only when you use the popup.</li>
+    <li><strong>The address of the active tab</strong>, used to know which website's data to show.</li>
+    <li><strong>Custom header rules</strong> you create (domain, header name and value), saved in the extension's own browser storage on your device so they keep working.</li>
+  </ul>
+
+  <h2>What the extension does not do</h2>
+  <ul>
+    <li>It does not send any data to the developer or to any server. The extension makes no network requests of its own.</li>
+    <li>It does not use analytics, tracking, advertising or third-party services.</li>
+    <li>It does not sell, share or transfer data to anyone.</li>
+    <li>It does not read your browsing history or run on pages you do not open it on.</li>
+  </ul>
+
+  <h2>Clipboard</h2>
+  <p>When you click a Copy button, the selected values are written to your clipboard. The extension never reads your clipboard.</p>
+
+  <h2>Custom request headers</h2>
+  <p>Headers you add are attached by your browser to requests going to the domain you chose, and only while the header is switched on. They are sent only to that website, as you configured.</p>
+
+  <h2>Removing data</h2>
+  <p>Delete any header rule from the Headers tab, or uninstall the extension to remove everything it has stored. Changes you made to a website's cookies or storage can be undone in the extension or in your browser's settings.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, the new version will be published on this page with a new date.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or concerns: open an issue at <a href="https://github.com/epicvishal/Extension/issues">github.com/epicvishal/Extension/issues</a>.</p>
+</main>
+</body>
+</html>
