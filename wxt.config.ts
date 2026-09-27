@@ -8,8 +8,9 @@ export default defineConfig({
     plugins: [tailwindcss()],
   }),
   manifest: {
-    name: 'My Extension',
-    description: 'Browser extension for Edge and Chrome',
-    permissions: ['storage', 'activeTab'],
+    name: 'Site Data Editor',
+    description: 'View and edit cookies, local/session storage and request headers for the current site',
+    permissions: ['storage', 'activeTab', 'tabs', 'cookies', 'scripting', 'declarativeNetRequest'],
+    host_permissions: ['<all_urls>'],
   },
 });
