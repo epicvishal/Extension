@@ -1,1 +1,46 @@
 @import 'tailwindcss';
+
+/* Semantic colours; the dark block below swaps them when the OS is in dark mode. */
+@theme {
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-subtle: #eef0f5;
+  --color-border: #e1e4ec;
+  --color-fg: #151a2d;
+  --color-muted: #5f6680;
+  --color-faint: #9aa0b4;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-soft: #eceafd;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fdecec;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-bg: #10131d;
+    --color-surface: #181c29;
+    --color-subtle: #222738;
+    --color-border: #2c3246;
+    --color-fg: #e8eaf2;
+    --color-muted: #a0a6bd;
+    --color-faint: #6c7390;
+    --color-accent: #7c74ff;
+    --color-accent-hover: #918aff;
+    --color-accent-soft: #272552;
+    --color-danger: #f87171;
+    --color-danger-soft: #3a1d24;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+}
+
+input[type='checkbox'] {
+  accent-color: var(--color-accent);
+}

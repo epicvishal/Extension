@@ -1,25 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Copy, Database, Pencil, Trash2 } from 'lucide-react';
 import { errorMessage } from '@/utils/format';
 import { readStorage, writeStorage, type PageStorageArea, type StorageEntry } from '@/utils/pageStorage';
 import { useSelection } from '@/utils/useSelection';
+import { DataRow } from './DataRow';
 import { EntryForm } from './EntryForm';
 import { ListToolbar } from './ListToolbar';
-import { Button, Notice } from './ui';
+import { useToast } from './Toast';
+import { EmptyState, IconButton, Pill, Sheet } from './ui';
+
+const AREA_LABEL: Record<PageStorageArea, string> = {
+  localStorage: 'local storage',
+  sessionStorage: 'session storage',
+};
+
+// JSON values get a tag so they're easy to spot.
+const looksLikeJson = (value: string) => /^\s*[[{]/.test(value);
 
 export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorageArea }) {
   const [entries, setEntries] = useState<StorageEntry[]>([]);
   const [filter, setFilter] = useState('');
-  const [editing, setEditing] = useState<string | 'new' | null>(null);
-  const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
+  const [editing, setEditing] = useState<StorageEntry | 'new' | null>(null);
+  const [loadError, setLoadError] = useState('');
   const { selected, toggle, setAll, clear } = useSelection();
+  const toast = useToast();
 
   const load = useCallback(async () => {
     try {
       setEntries(await readStorage(tabId, area));
-      setError('');
+      setLoadError('');
     } catch (e) {
-      setError(errorMessage(e));
+      setLoadError(errorMessage(e));
     }
   }, [tabId, area]);
 
@@ -37,17 +48,16 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
   const run = async (action: () => Promise<unknown>, done?: string) => {
     try {
       await action();
-      setError('');
-      setInfo(done ?? '');
+      if (done) toast(done);
       await load();
     } catch (e) {
-      setError(errorMessage(e));
+      toast(errorMessage(e), 'error');
     }
   };
 
   const save = (entry: StorageEntry) => {
-    if (!entry.key) return setError('Key is required');
-    const renamedFrom = editing !== 'new' && editing !== entry.key ? editing : null;
+    if (!entry.key) return toast('Key is required', 'error');
+    const renamedFrom = editing !== 'new' && editing && editing.key !== entry.key ? editing.key : null;
     run(async () => {
       await writeStorage(tabId, area, { set: [entry], remove: renamedFrom ? [renamedFrom] : [] });
       setEditing(null);
@@ -66,11 +76,13 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
       await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     }, `Copied ${toCopy.length} item(s) as JSON`);
 
+  const closeEditor = useCallback(() => setEditing(null), []);
+
   return (
-    <div>
-      {error && <Notice tone="error">{error}</Notice>}
-      {info && <Notice tone="info">{info}</Notice>}
+    <>
       <ListToolbar
+        noun="items"
+        count={entries.length}
         filter={filter}
         onFilter={setFilter}
         total={visible.length}
@@ -81,47 +93,55 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
         onCopySelected={copySelected}
         onRefresh={load}
       />
-      {editing === 'new' && <EntryForm onSave={save} onCancel={() => setEditing(null)} />}
-      {visible.length === 0 && editing !== 'new' && (
-        <p className="py-6 text-center text-xs text-slate-400">No {area} items on this page</p>
+      {loadError ? (
+        <EmptyState icon={<Database />} title={`Couldn't read ${AREA_LABEL[area]}`} text={loadError} />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={<Database />}
+          title={filter ? 'No matching items' : `Nothing in ${AREA_LABEL[area]}`}
+          text={filter ? undefined : 'Click Add to create an item.'}
+        />
+      ) : (
+        <ul className="space-y-0.5 p-1.5">
+          {visible.map((entry) => (
+            <DataRow
+              key={entry.key}
+              checked={selected.has(entry.key)}
+              onToggle={() => toggle(entry.key)}
+              title={entry.key}
+              value={entry.value}
+              pills={looksLikeJson(entry.value) ? <Pill tone="violet">JSON</Pill> : undefined}
+              actions={
+                <>
+                  <IconButton
+                    label="Copy value"
+                    onClick={() => run(() => navigator.clipboard.writeText(entry.value), `Copied ${entry.key}`)}
+                  >
+                    <Copy />
+                  </IconButton>
+                  <IconButton label="Edit" onClick={() => setEditing(entry)}>
+                    <Pencil />
+                  </IconButton>
+                  <IconButton
+                    label="Delete"
+                    tone="danger"
+                    onClick={() =>
+                      run(() => writeStorage(tabId, area, { remove: [entry.key] }), `Deleted ${entry.key}`)
+                    }
+                  >
+                    <Trash2 />
+                  </IconButton>
+                </>
+              }
+            />
+          ))}
+        </ul>
       )}
-      <ul className="divide-y divide-slate-100">
-        {visible.map((entry) =>
-          editing === entry.key ? (
-            <li key={entry.key} className="py-1">
-              <EntryForm initial={entry} onSave={save} onCancel={() => setEditing(null)} />
-            </li>
-          ) : (
-            <li key={entry.key} className="flex items-start gap-2 py-1.5">
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={selected.has(entry.key)}
-                onChange={() => toggle(entry.key)}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-semibold">{entry.key}</div>
-                <div className="truncate font-mono text-[11px] text-slate-600" title={entry.value}>
-                  {entry.value || <em className="text-slate-400">empty</em>}
-                </div>
-              </div>
-              <Button
-                title="Copy value"
-                onClick={() => run(() => navigator.clipboard.writeText(entry.value), `Copied ${entry.key}`)}
-              >
-                Copy
-              </Button>
-              <Button onClick={() => setEditing(entry.key)}>Edit</Button>
-              <Button
-                variant="danger"
-                onClick={() => run(() => writeStorage(tabId, area, { remove: [entry.key] }), `Deleted ${entry.key}`)}
-              >
-                ✕
-              </Button>
-            </li>
-          ),
-        )}
-      </ul>
-    </div>
+      {editing && (
+        <Sheet title={editing === 'new' ? 'Add item' : `Edit ${editing.key}`} onClose={closeEditor}>
+          <EntryForm initial={editing === 'new' ? undefined : editing} onSave={save} onCancel={closeEditor} />
+        </Sheet>
+      )}
+    </>
   );
 }

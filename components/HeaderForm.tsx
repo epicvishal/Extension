@@ -1,26 +1,22 @@
 import { useState } from 'react';
 import type { HeaderRule } from '@/utils/headers';
-import { Button, Field, Input } from './ui';
+import { Field, Input, SheetForm, Textarea } from './ui';
+
+type Fields = Pick<HeaderRule, 'domain' | 'name' | 'value'>;
 
 type Props = {
-  initial: Pick<HeaderRule, 'domain' | 'name' | 'value'>;
-  onSave: (rule: Pick<HeaderRule, 'domain' | 'name' | 'value'>) => void;
+  initial: Fields;
+  onSave: (rule: Fields) => void;
   onCancel: () => void;
 };
 
 export function HeaderForm({ initial, onSave, onCancel }: Props) {
   const [rule, setRule] = useState(initial);
-  const update = (patch: Partial<typeof rule>) => setRule((prev) => ({ ...prev, ...patch }));
+  const update = (patch: Partial<Fields>) => setRule((prev) => ({ ...prev, ...patch }));
 
   return (
-    <form
-      className="space-y-2 rounded border border-slate-200 bg-slate-50 p-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave(rule);
-      }}
-    >
-      <div className="grid grid-cols-2 gap-2">
+    <SheetForm onSubmit={() => onSave(rule)} onCancel={onCancel}>
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Header name">
           <Input
             placeholder="Authorization"
@@ -29,21 +25,13 @@ export function HeaderForm({ initial, onSave, onCancel }: Props) {
             autoFocus
           />
         </Field>
-        <Field label="Domain (subdomains included)">
+        <Field label="Domain" hint="Subdomains are included">
           <Input value={rule.domain} onChange={(e) => update({ domain: e.target.value })} />
         </Field>
       </div>
       <Field label="Value">
-        <Input value={rule.value} onChange={(e) => update({ value: e.target.value })} className="font-mono" />
+        <Textarea rows={4} value={rule.value} onChange={(e) => update({ value: e.target.value })} />
       </Field>
-      <div className="flex justify-end gap-1.5">
-        <Button type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary">
-          Save
-        </Button>
-      </div>
-    </form>
+    </SheetForm>
   );
 }

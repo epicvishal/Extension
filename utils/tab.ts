@@ -1,4 +1,4 @@
-export type ActiveTab = { id: number; url: URL };
+export type ActiveTab = { id: number; url: URL; favIconUrl?: string };
 
 // Returns the active tab when it is a normal web page; browser pages (edge://, chrome://) return null.
 export async function getActiveTab(): Promise<ActiveTab | null> {
@@ -6,5 +6,5 @@ export async function getActiveTab(): Promise<ActiveTab | null> {
   if (tab?.id == null || !tab.url) return null;
   const url = new URL(tab.url);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-  return { id: tab.id, url };
+  return { id: tab.id, url, favIconUrl: tab.favIconUrl };
 }
