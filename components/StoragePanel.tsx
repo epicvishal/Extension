@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { errorMessage } from '@/utils/format';
-import { readStorage, writeStorage, type StorageArea, type StorageEntry } from '@/utils/pageStorage';
+import { readStorage, writeStorage, type PageStorageArea, type StorageEntry } from '@/utils/pageStorage';
 import { useSelection } from '@/utils/useSelection';
 import { EntryForm } from './EntryForm';
 import { ListToolbar } from './ListToolbar';
 import { Button, Notice } from './ui';
 
-export function StoragePanel({ tabId, area }: { tabId: number; area: StorageArea }) {
+export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorageArea }) {
   const [entries, setEntries] = useState<StorageEntry[]>([]);
   const [filter, setFilter] = useState('');
   const [editing, setEditing] = useState<string | 'new' | null>(null);

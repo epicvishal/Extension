@@ -1,4 +1,4 @@
-export type StorageArea = 'localStorage' | 'sessionStorage';
+export type PageStorageArea = 'localStorage' | 'sessionStorage';
 export type StorageEntry = { key: string; value: string };
 
 type PageResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -16,10 +16,10 @@ async function runInPage<Args extends unknown[], T>(
   return result.data;
 }
 
-export function readStorage(tabId: number, area: StorageArea) {
+export function readStorage(tabId: number, area: PageStorageArea) {
   return runInPage(
     tabId,
-    (area: StorageArea): PageResult<StorageEntry[]> => {
+    (area: PageStorageArea): PageResult<StorageEntry[]> => {
       try {
         const store = window[area];
         const entries: StorageEntry[] = [];
@@ -39,12 +39,12 @@ export function readStorage(tabId: number, area: StorageArea) {
 
 export function writeStorage(
   tabId: number,
-  area: StorageArea,
+  area: PageStorageArea,
   changes: { set?: StorageEntry[]; remove?: string[] },
 ) {
   return runInPage(
     tabId,
-    (area: StorageArea, set: StorageEntry[], remove: string[]): PageResult<null> => {
+    (area: PageStorageArea, set: StorageEntry[], remove: string[]): PageResult<null> => {
       try {
         const store = window[area];
         remove.forEach((key) => store.removeItem(key));
