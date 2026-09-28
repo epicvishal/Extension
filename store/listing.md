@@ -67,7 +67,7 @@ Use these if Partner Center or the reviewers ask why each permission is needed.
 | `declarativeNetRequest` | To add the custom request headers the user defines for a domain (Headers tab). No requests are blocked or redirected. |
 | `storage` | To remember the user's custom header rules between browser sessions. |
 | `sidePanel` | To let the user open the same editor in the browser's side panel, which stays open while switching tabs. |
-| Host access to all sites (`<all_urls>`) | The tool is meant to work on whatever website the user opens. Cookie and header access requires host permission for that site. The extension acts only when the user opens the popup, or for header rules the user explicitly created. |
+| Host access to all sites (`<all_urls>`) | The tool is meant to work on whatever website the user opens. Cookie and header access requires host permission for that site. The extension acts only while the user has it open (popup or side panel), or for header rules the user explicitly created. |
 
 Remote code: none. All code ships in the package.
 Data collection: none.
@@ -78,7 +78,7 @@ Site Data Editor is a developer tool and does not require an account.
 How to test:
 1. Open any website, for example https://example.com or https://github.com.
 2. Click the Site Data Editor toolbar icon.
-3. Cookies tab: click Add, enter a name and value, and Save. The cookie appears in the list. Click it to expand the full value; use Copy, Edit and Delete on the row.
+3. Cookies tab: click Add, enter a name and value, and Save. The cookie appears in the list. Click the arrow next to its name to expand the full value; use Copy, Edit and Delete on the row.
 4. Local storage tab: Add an item (e.g. key "test", value "123"), reload the page and reopen the popup; the item is still there.
 5. Side panel: click the panel icon at the top right of the popup. The editor opens in the side panel; switch tabs and it shows the new tab's data.
 6. Headers tab: Add a header (e.g. "X-Test: hello") for the site's domain, reload the page, and check DevTools > Network > Request Headers: X-Test is sent.
