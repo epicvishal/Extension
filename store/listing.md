@@ -55,7 +55,7 @@ cookie editor, cookies, local storage, session storage, request headers, develop
 
 ### Images
 - Store logo (300×300): `store/logo-300.png`
-- Screenshots (1280×800): `store/screenshots/1-cookies.png` … `5-dark-mode.png`
+- Screenshots (1280×800): `store/screenshots/1-cookies.png` … `6-side-panel.png`
 
 ## Permission justifications
 Use these if Partner Center or the reviewers ask why each permission is needed.
@@ -80,7 +80,7 @@ How to test:
 2. Click the Site Data Editor toolbar icon.
 3. Cookies tab: click Add, enter a name and value, and Save. The cookie appears in the list. Click the arrow next to its name to expand the full value; use Copy, Edit and Delete on the row.
 4. Local storage tab: Add an item (e.g. key "test", value "123"), reload the page and reopen the popup; the item is still there.
-5. Side panel: click the panel icon at the top right of the popup. The editor opens in the side panel; switch tabs and it shows the new tab's data.
+5. Side panel: click the panel icon at the top right of the popup. The editor opens in the side panel; switch tabs and it shows the new tab's data. The icon at the top right of the panel closes it.
 6. Headers tab: Add a header (e.g. "X-Test: hello") for the site's domain, reload the page, and check DevTools > Network > Request Headers: X-Test is sent.
 
 The extension makes no network requests of its own and collects no data.

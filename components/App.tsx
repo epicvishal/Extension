@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cookie, Database, Globe, PanelRightOpen, Send, ShieldOff, Timer } from 'lucide-react';
+import { Cookie, Database, Globe, PanelRightClose, PanelRightOpen, Send, ShieldOff, Timer } from 'lucide-react';
 import { CookiesPanel } from '@/components/CookiesPanel';
 import { HeadersPanel } from '@/components/HeadersPanel';
 import { StoragePanel } from '@/components/StoragePanel';
@@ -35,6 +35,15 @@ function App({ mode }: Props) {
   const openSidePanel = () => {
     if (windowId == null) return;
     browser.sidePanel.open({ windowId }).then(() => window.close(), console.error);
+  };
+
+  // sidePanel.close() is new (Chrome 141); closing the panel's own page works everywhere else.
+  const closeSidePanel = () => {
+    if (windowId != null && typeof browser.sidePanel.close === 'function') {
+      browser.sidePanel.close({ windowId }).catch(() => window.close());
+    } else {
+      window.close();
+    }
   };
   const [active, setActive] = useState<TabId>('cookies');
   const [iconFailed, setIconFailed] = useState(false);
@@ -81,6 +90,11 @@ function App({ mode }: Props) {
                 disabled={windowId == null}
               >
                 <PanelRightOpen />
+              </IconButton>
+            )}
+            {mode === 'sidepanel' && (
+              <IconButton label="Close side panel" onClick={closeSidePanel}>
+                <PanelRightClose />
               </IconButton>
             )}
           </div>
