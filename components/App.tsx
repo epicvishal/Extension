@@ -19,6 +19,10 @@ type TabId = (typeof TABS)[number]['id'];
 // Known before any click: sidePanel.open() must run straight from the click, with no await before it.
 const currentWindow = browser.windows.getCurrent().catch(() => null);
 
+// Missing when the browser has no side panel, or the loaded manifest predates the "sidePanel"
+// permission (an unpacked extension picks up new permissions only on Reload).
+const sidePanel = browser.sidePanel as typeof browser.sidePanel | undefined;
+
 type Props = {
   // The popup closes whenever focus leaves it; the side panel stays open and follows the active tab.
   mode: 'popup' | 'sidepanel';
@@ -33,14 +37,14 @@ function App({ mode }: Props) {
   }, []);
 
   const openSidePanel = () => {
-    if (windowId == null) return;
-    browser.sidePanel.open({ windowId }).then(() => window.close(), console.error);
+    if (windowId == null || !sidePanel) return;
+    sidePanel.open({ windowId }).then(() => window.close(), console.error);
   };
 
   // sidePanel.close() is new (Chrome 141); closing the panel's own page works everywhere else.
   const closeSidePanel = () => {
-    if (windowId != null && typeof browser.sidePanel.close === 'function') {
-      browser.sidePanel.close({ windowId }).catch(() => window.close());
+    if (windowId != null && typeof sidePanel?.close === 'function') {
+      sidePanel.close({ windowId }).catch(() => window.close());
     } else {
       window.close();
     }
@@ -83,7 +87,7 @@ function App({ mode }: Props) {
                 </span>
               </div>
             </div>
-            {mode === 'popup' && (
+            {mode === 'popup' && sidePanel && (
               <IconButton
                 label="Open in side panel (stays open when you switch tabs)"
                 onClick={openSidePanel}
