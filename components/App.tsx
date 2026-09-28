@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Cookie, Database, Globe, PanelRightClose, PanelRightOpen, Send, ShieldOff, Timer } from 'lucide-react';
+import {
+  Cookie,
+  Database,
+  Globe,
+  PanelRightClose,
+  PanelRightOpen,
+  Send,
+  ShieldOff,
+  SquareTerminal,
+  Timer,
+} from 'lucide-react';
+import { ConsolePanel } from '@/components/ConsolePanel';
 import { CookiesPanel } from '@/components/CookiesPanel';
 import { HeadersPanel } from '@/components/HeadersPanel';
 import { StoragePanel } from '@/components/StoragePanel';
@@ -12,6 +23,7 @@ const TABS = [
   { id: 'local', label: 'Local', title: 'Local storage', icon: Database },
   { id: 'session', label: 'Session', title: 'Session storage', icon: Timer },
   { id: 'headers', label: 'Headers', title: 'Headers', icon: Send },
+  { id: 'console', label: 'Console', title: 'Console', icon: SquareTerminal },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -102,7 +114,7 @@ function App({ mode }: Props) {
               </IconButton>
             )}
           </div>
-          <nav className="mt-2.5 -mb-px flex gap-1 overflow-x-auto">
+          <nav className="mt-2.5 -mb-px flex gap-0.5 overflow-x-auto">
             {TABS.map(({ id, label, title, icon: Icon }) => (
               <button
                 key={id}
@@ -136,6 +148,7 @@ function App({ mode }: Props) {
                 <StoragePanel key={`session|${siteKey}`} tabId={page.id} area="sessionStorage" revision={revision} />
               )}
               {active === 'headers' && <HeadersPanel hostname={page.url.hostname} />}
+              {active === 'console' && <ConsolePanel key={siteKey} tabId={page.id} pageUrl={page.url} />}
             </>
           )}
         </main>

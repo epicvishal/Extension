@@ -5,6 +5,7 @@ Browser extension (Manifest V3) for Edge and Chrome. On any website, the popup l
 - **Cookies** that the browser sends to the current page (including parent-domain cookies)
 - **Local storage** and **session storage** items of the current page
 - **Custom request headers** added to every request to a chosen domain (via declarativeNetRequest)
+- **Console**: the page's console messages and uncaught errors, and a prompt that runs JavaScript on the page. `entrypoints/console-hook.ts` runs in the page (MAIN world) to record messages; the tab polls it once a second. "Capture from page load" registers the same script at `document_start` for one site
 
 Selected cookies and storage items can be copied as JSON.
 
