@@ -5,7 +5,7 @@ export function Details({ items }: { items: [string, string][] }) {
       {items.map(([label, value]) => (
         <div key={label} className="contents">
           <dt className="text-faint">{label}</dt>
-          <dd className="truncate text-muted">{value}</dd>
+          <dd className="cursor-text truncate text-muted" title={value}>{value}</dd>
         </div>
       ))}
     </dl>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type MouseEvent, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 
 type Props = {
@@ -12,9 +12,17 @@ type Props = {
   dimmed?: boolean;
 };
 
-// One item in a list: checkbox, name with tags, one-line value; click to see the full value.
+// Name and value are plain selectable text; clicking the arrow or the row's empty space expands it.
+const TEXT = 'data-text';
+
+// One item in a list: checkbox, name with tags, one-line value; expand to see the full value.
 export function DataRow({ checked, onToggle, title, value, pills, details, actions, dimmed }: Props) {
   const [open, setOpen] = useState(false);
+
+  const onRowClick = (e: MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest(`[${TEXT}]`)) return;
+    setOpen((o) => !o);
+  };
 
   return (
     <li
@@ -26,31 +34,39 @@ export function DataRow({ checked, onToggle, title, value, pills, details, actio
         <label className="flex size-7 shrink-0 cursor-pointer items-center justify-center">
           <input type="checkbox" checked={checked} onChange={onToggle} />
         </label>
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className={`min-w-0 flex-1 py-1 text-left ${dimmed ? 'opacity-50' : ''}`}
+        <div
+          onClick={onRowClick}
+          className={`min-w-0 flex-1 cursor-pointer py-1 ${dimmed ? 'opacity-50' : ''}`}
         >
           <div className="flex min-w-0 items-center gap-1.5">
-            <ChevronRight
-              className={`size-3 shrink-0 text-faint transition-transform ${open ? 'rotate-90' : ''}`}
-            />
-            <span className="truncate text-[12.5px] font-semibold text-fg">{title}</span>
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-label={open ? 'Hide full value' : 'Show full value'}
+              className="-m-1 shrink-0 rounded p-1 text-faint hover:bg-subtle hover:text-fg"
+            >
+              <ChevronRight className={`size-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+            </button>
+            <span {...{ [TEXT]: '' }} className="cursor-text truncate text-[12.5px] font-semibold text-fg">
+              {title}
+            </span>
             {pills}
           </div>
           {!open && (
-            <div className="mt-0.5 truncate pl-[18px] font-mono text-[11px] text-muted">
-              {value || <em className="text-faint">empty</em>}
+            <div className="mt-0.5 flex min-w-0 pl-[18px]">
+              <span {...{ [TEXT]: '' }} className="cursor-text truncate font-mono text-[11px] text-muted">
+                {value || <em className="text-faint">empty</em>}
+              </span>
             </div>
           )}
-        </button>
+        </div>
         <div className="flex shrink-0 items-center opacity-70 transition-opacity group-hover:opacity-100">
           {actions}
         </div>
       </div>
       {open && (
         <div className="mt-1 mb-1 ml-[46px] space-y-1.5 pr-1">
-          <pre className="max-h-44 overflow-auto rounded-md border border-border bg-subtle p-2 font-mono text-[11px] whitespace-pre-wrap break-all text-fg">
+          <pre className="max-h-44 cursor-text overflow-auto rounded-md border border-border bg-subtle p-2 font-mono text-[11px] whitespace-pre-wrap break-all text-fg">
             {value || '(empty)'}
           </pre>
           {details}
