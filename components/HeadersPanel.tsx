@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, Pencil, Send, Trash2 } from 'lucide-react';
+import { copyText } from '@/utils/clipboard';
 import { errorMessage } from '@/utils/format';
 import { headerRules, nextRuleId, saveHeaderRules, type HeaderRule } from '@/utils/headers';
 import { useSelection } from '@/utils/useSelection';
@@ -42,7 +43,7 @@ export function HeadersPanel({ hostname }: { hostname: string }) {
 
   const copy = async (text: string, done: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyText(text);
       toast(done);
     } catch (e) {
       toast(errorMessage(e), 'error');

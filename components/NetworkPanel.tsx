@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronRight, CircleCheck, Copy, Search, Terminal, Trash2 } from 'lucide-react';
+import { copyText } from '@/utils/clipboard';
 import { errorMessage } from '@/utils/format';
 import { isNetworkError, readRequests, type NetworkEntry } from '@/utils/pageHook';
 import { CaptureControls } from './CaptureControls';
+import { CopyButton } from './CopyButton';
 import { useToast } from './Toast';
 import { EmptyState, IconButton } from './ui';
 
@@ -26,12 +28,43 @@ const pretty = (body: string) => {
   }
 };
 
+// Placeholders the page script stores instead of a body it can't show as text, e.g. "[Blob …]".
+const isPlaceholder = (body: string) =>
+  /^\[(Blob |binary, |Document\]|file |dropped to save memory\]|[A-Za-z]+ (body|response)|[A-Z][A-Za-z]+\]$)/.test(body);
+
+const headerText = (headers: [string, string][] = []) => headers.map(([name, value]) => `${name}: ${value}`).join('\n');
+
+const statusLine = (e: NetworkEntry) =>
+  e.failed ? `Failed: ${e.failed}` : e.done ? `${e.status} ${e.statusText ?? ''}`.trim() : 'Pending';
+
+// Everything about one call as plain text, for pasting into a ticket or chat.
+function allDetailsText(e: NetworkEntry) {
+  return [
+    `${e.method} ${e.url}`,
+    `Status: ${statusLine(e)}`,
+    '',
+    'Request headers:',
+    headerText(e.requestHeaders) || '(none)',
+    '',
+    'Request body:',
+    e.requestBody ?? '(none)',
+    '',
+    'Response headers:',
+    headerText(e.responseHeaders) || '(none)',
+    '',
+    'Response body:',
+    e.responseBody != null ? pretty(e.responseBody) : '(none)',
+  ].join('\n');
+}
+
 const quote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
 
 function toCurl(e: NetworkEntry) {
-  const parts = [`curl -X ${e.method} ${quote(e.url)}`];
+  const body = e.requestBody && !isPlaceholder(e.requestBody) ? e.requestBody : undefined;
+  const parts = [`curl ${quote(e.url)}`];
+  if (e.method !== 'GET' || body) parts.push(`-X ${e.method}`);
   for (const [name, value] of e.requestHeaders ?? []) parts.push(`-H ${quote(`${name}: ${value}`)}`);
-  if (e.requestBody && !e.requestBody.startsWith('[')) parts.push(`--data-raw ${quote(e.requestBody)}`);
+  if (body) parts.push(`--data-raw ${quote(body)}`);
   return parts.join(' \\\n  ');
 }
 
@@ -52,25 +85,32 @@ function StatusBadge({ entry }: { entry: NetworkEntry }) {
   );
 }
 
-function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+function Section({ title, copy, children }: { title: string; copy?: string; children: ReactNode }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
+      <div className="mb-1 flex min-h-6 items-center justify-between gap-2">
         <span className="text-[10.5px] font-semibold tracking-wide text-faint uppercase">{title}</span>
-        {action}
+        {copy ? <CopyButton text={copy} what={title.toLowerCase()} /> : null}
       </div>
       {children}
     </div>
   );
 }
 
-function HeaderTable({ headers }: { headers: [string, string][] }) {
-  if (!headers.length) return <p className="text-[11px] text-faint italic">None</p>;
+const codeBlock =
+  'cursor-text overflow-auto rounded-md border border-border bg-subtle p-2 font-mono text-[11px] break-all whitespace-pre-wrap text-fg';
+
+function Empty({ children }: { children: ReactNode }) {
+  return <p className="text-[11px] text-faint italic">{children}</p>;
+}
+
+function HeaderTable({ headers }: { headers?: [string, string][] }) {
+  if (!headers?.length) return <Empty>None</Empty>;
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-[11px]">
+    <dl className="grid max-h-48 grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 overflow-auto rounded-md border border-border bg-subtle p-2 font-mono text-[11px]">
       {headers.map(([name, value], i) => (
         <div key={`${name}-${i}`} className="contents">
-          <dt className="text-muted">{name}</dt>
+          <dt className="cursor-text text-muted">{name}</dt>
           <dd className="cursor-text break-all text-fg">{value}</dd>
         </div>
       ))}
@@ -78,24 +118,27 @@ function HeaderTable({ headers }: { headers: [string, string][] }) {
   );
 }
 
-function Details({ entry, copy }: { entry: NetworkEntry; copy: (text: string, what: string) => void }) {
+function Details({ entry }: { entry: NetworkEntry }) {
   const error = isNetworkError(entry);
-  const copyButton = (text: string, what: string) => (
-    <IconButton label={`Copy ${what}`} className="size-6" onClick={() => copy(text, what)}>
-      <Copy />
-    </IconButton>
-  );
+  const responseBody = entry.responseBody != null ? pretty(entry.responseBody) : undefined;
+  const requestBody = entry.requestBody != null ? pretty(entry.requestBody) : undefined;
 
   return (
     <div className="space-y-3 border-t border-border bg-surface px-3 py-2.5">
-      <Section title="General" action={error ? copyButton(toCurl(entry), 'as cURL') : undefined}>
+      <div className="flex flex-wrap gap-1.5">
+        <CopyButton text={toCurl(entry)} what="request as cURL" label="Copy as cURL" variant="primary" />
+        <CopyButton text={entry.url} what="URL" label="Copy URL" />
+        <CopyButton text={allDetailsText(entry)} what="all details" label="Copy all details" />
+      </div>
+
+      <Section title="General">
         <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px]">
           <dt className="text-faint">URL</dt>
           <dd className="cursor-text font-mono break-all text-fg">{entry.url}</dd>
+          <dt className="text-faint">Method</dt>
+          <dd className="font-mono text-fg">{entry.method}</dd>
           <dt className="text-faint">Status</dt>
-          <dd className={error ? 'text-danger' : 'text-fg'}>
-            {entry.failed ?? (entry.done ? `${entry.status} ${entry.statusText ?? ''}` : 'Pending')}
-          </dd>
+          <dd className={error ? 'text-danger' : 'text-fg'}>{statusLine(entry)}</dd>
           <dt className="text-faint">Type</dt>
           <dd className="text-fg">{entry.type === 'fetch' ? 'fetch' : 'XMLHttpRequest'}</dd>
           <dt className="text-faint">Started</dt>
@@ -106,34 +149,32 @@ function Details({ entry, copy }: { entry: NetworkEntry; copy: (text: string, wh
         </dl>
       </Section>
 
-      {error ? (
-        <>
-          {entry.responseBody !== undefined && (
-            <Section title="Response" action={copyButton(entry.responseBody, 'response')}>
-              <pre className="max-h-64 cursor-text overflow-auto rounded-md border border-border bg-subtle p-2 font-mono text-[11px] break-all whitespace-pre-wrap text-fg">
-                {pretty(entry.responseBody) || '(empty body)'}
-              </pre>
-            </Section>
-          )}
-          {entry.requestBody !== undefined && (
-            <Section title="Request payload" action={copyButton(entry.requestBody, 'payload')}>
-              <pre className="max-h-40 cursor-text overflow-auto rounded-md border border-border bg-subtle p-2 font-mono text-[11px] break-all whitespace-pre-wrap text-fg">
-                {pretty(entry.requestBody)}
-              </pre>
-            </Section>
-          )}
-          {entry.responseHeaders && (
-            <Section title="Response headers">
-              <HeaderTable headers={entry.responseHeaders} />
-            </Section>
-          )}
-          <Section title="Request headers">
-            <HeaderTable headers={entry.requestHeaders ?? []} />
-          </Section>
-        </>
-      ) : (
-        <p className="text-[11px] text-faint">Response bodies and headers are kept only for failed calls.</p>
-      )}
+      <Section title="Request headers" copy={headerText(entry.requestHeaders) || undefined}>
+        <HeaderTable headers={entry.requestHeaders} />
+        <p className="mt-1 text-[10.5px] text-faint">
+          Headers set by the page's code. The browser adds cookies and a few others on its own.
+        </p>
+      </Section>
+
+      <Section title="Request body" copy={requestBody}>
+        {requestBody != null ? <pre className={`max-h-48 ${codeBlock}`}>{requestBody}</pre> : <Empty>No request body</Empty>}
+      </Section>
+
+      <Section title="Response headers" copy={headerText(entry.responseHeaders) || undefined}>
+        {entry.done && !entry.failed ? <HeaderTable headers={entry.responseHeaders} /> : <Empty>{entry.failed ? 'No response' : 'Waiting for the response…'}</Empty>}
+      </Section>
+
+      <Section title="Response body" copy={responseBody}>
+        {!entry.done ? (
+          <Empty>Waiting for the response…</Empty>
+        ) : entry.failed ? (
+          <Empty>No response: {entry.failed}</Empty>
+        ) : responseBody == null ? (
+          <Empty>Reading…</Empty>
+        ) : (
+          <pre className={`max-h-72 ${codeBlock}`}>{responseBody || '(empty body)'}</pre>
+        )}
+      </Section>
     </div>
   );
 }
@@ -203,7 +244,7 @@ export function NetworkPanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
 
   const copy = async (text: string, what: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyText(text);
       toast(`Copied ${what}`);
     } catch (e) {
       toast(errorMessage(e), 'error');
@@ -341,7 +382,7 @@ export function NetworkPanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
                   <span className="hidden shrink-0 text-[10.5px] text-faint @sm:inline">{duration(entry.duration)}</span>
                   <span className="shrink-0 text-[10.5px] text-faint">{clock(entry.start)}</span>
                 </button>
-                {expanded && <Details entry={entry} copy={copy} />}
+                {expanded && <Details entry={entry} />}
               </div>
             );
           })

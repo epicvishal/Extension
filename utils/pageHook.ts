@@ -2,7 +2,7 @@ export type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 export type PageLogEntry = { id: number; level: LogLevel; time: number; text: string };
 export type RunResult = { ok: boolean; blocked?: boolean; text: string };
 
-// One fetch/XHR call made by the page. Bodies and headers are kept only for failed calls.
+// One fetch/XHR call made by the page, with its headers and (text) bodies.
 export type NetworkEntry = {
   id: number;
   // Bumped whenever the entry changes (started → finished), so readers can ask for "changed since".

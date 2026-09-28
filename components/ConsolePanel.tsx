@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ChevronRight, Copy, CornerDownLeft, Search, Trash2 } from 'lucide-react';
+import { copyText } from '@/utils/clipboard';
 import { errorMessage } from '@/utils/format';
 import { readLogs, runCode, type LogLevel } from '@/utils/pageHook';
 import { CaptureControls } from './CaptureControls';
@@ -183,7 +184,7 @@ export function ConsolePanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
       })
       .join('\n');
     try {
-      await navigator.clipboard.writeText(text);
+      await copyText(text);
       toast(`Copied ${visible.length} line(s)`);
     } catch (e) {
       toast(errorMessage(e), 'error');

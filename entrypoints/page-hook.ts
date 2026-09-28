@@ -105,6 +105,9 @@ export default defineUnlistedScript(() => {
 
   const MAX_REQUESTS = 300;
   const MAX_BODY = 50_000;
+  // Bodies of all kept calls together; past this, the oldest calls lose their bodies.
+  const MAX_TOTAL_BODIES = 5_000_000;
+  const MAX_READ_BYTES = 2_000_000;
   const requests: NetworkEntry[] = [];
   let lastRequestId = 0;
   let lastSeq = 0;
@@ -129,27 +132,98 @@ export default defineUnlistedScript(() => {
     }
     if (body instanceof Blob) return `[Blob ${body.type || 'binary'}, ${body.size} bytes]`;
     if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return `[binary, ${body.byteLength} bytes]`;
+    if (body instanceof Document) return '[Document]';
     return `[${Object.prototype.toString.call(body).slice(8, -1)}]`;
   };
 
   const headerList = (headers: HeadersInit | undefined): [string, string][] => {
+    if (!headers) return [];
     try {
-      return headers ? [...new Headers(headers)] : [];
+      return [...new Headers(headers)];
     } catch {
-      return [];
+      // Headers() rejects some values (e.g. non-Latin-1 text); still show what the page passed.
+      const pairs = Array.isArray(headers) ? headers : Object.entries(headers as Record<string, string>);
+      return pairs.map(([name, value]) => [String(name).toLowerCase(), String(value)]);
     }
   };
 
-  const track = (type: NetworkEntry['type'], method: string, url: string) => {
-    const entry: NetworkEntry = { id: ++lastRequestId, seq: ++lastSeq, type, method, url, start: Date.now(), done: false };
+  const TEXT_TYPES = /json|text|xml|javascript|x-www-form-urlencoded|graphql|html/i;
+
+  // Text responses only: images, downloads and streams would cost memory for nothing readable.
+  const readResponseBody = async (response: Response): Promise<string> => {
+    if (response.type === 'opaque') return '[opaque response: the page made a no-cors request, so its body is hidden]';
+    const type = response.headers.get('content-type') ?? '';
+    const length = Number(response.headers.get('content-length'));
+    const size = Number.isFinite(length) && length > 0 ? `, ${length} bytes` : '';
+    if (/event-stream/i.test(type)) return '[event stream, not recorded]';
+    if (type && !TEXT_TYPES.test(type)) return `[${type.split(';')[0]} body${size}, not recorded]`;
+    if (length > MAX_READ_BYTES) return `[body${size}, too large to record]`;
+    try {
+      // Read a copy so the page still gets the original body.
+      return clip(await response.clone().text());
+    } catch {
+      return '[response body not readable]';
+    }
+  };
+
+  const xhrResponseBody = (x: XMLHttpRequest) => {
+    try {
+      if (x.responseType === '' || x.responseType === 'text') return clip(x.responseText);
+      if (x.responseType === 'json') return clip(JSON.stringify(x.response));
+      if (x.responseType === 'document') return '[document response, not recorded]';
+      return `[${x.responseType} response, not recorded]`;
+    } catch {
+      return '[response body not readable]';
+    }
+  };
+
+  const parseHeaderBlock = (block: string) =>
+    block
+      .trim()
+      .split(/[\r\n]+/)
+      .filter(Boolean)
+      .map((line): [string, string] => {
+        const i = line.indexOf(':');
+        return [line.slice(0, i).trim(), line.slice(i + 1).trim()];
+      });
+
+  // Keep memory bounded: drop bodies of the oldest calls once the total gets large.
+  const trimBodies = () => {
+    let total = 0;
+    for (const r of requests) total += (r.responseBody?.length ?? 0) + (r.requestBody?.length ?? 0);
+    for (const r of requests) {
+      if (total <= MAX_TOTAL_BODIES) break;
+      total -= (r.responseBody?.length ?? 0) + (r.requestBody?.length ?? 0);
+      if (r.responseBody) r.responseBody = '[dropped to save memory]';
+      if (r.requestBody) r.requestBody = '[dropped to save memory]';
+      r.seq = ++lastSeq;
+    }
+  };
+
+  const track = (type: NetworkEntry['type'], method: string, url: string, requestHeaders: [string, string][]) => {
+    const entry: NetworkEntry = {
+      id: ++lastRequestId,
+      seq: ++lastSeq,
+      type,
+      method,
+      url,
+      start: Date.now(),
+      done: false,
+      requestHeaders,
+    };
     requests.push(entry);
     if (requests.length > MAX_REQUESTS) requests.splice(0, requests.length - MAX_REQUESTS);
     return entry;
   };
 
-  const finish = (entry: NetworkEntry, patch: Partial<NetworkEntry>) => {
-    Object.assign(entry, patch, { done: true, duration: Date.now() - entry.start, seq: ++lastSeq });
+  const update = (entry: NetworkEntry, patch: Partial<NetworkEntry>) => {
+    Object.assign(entry, patch, { seq: ++lastSeq });
+    if (patch.responseBody || patch.requestBody) trimBodies();
   };
+
+  // Timing stops when the response arrives; the body may be filled in a moment later.
+  const finish = (entry: NetworkEntry, patch: Partial<NetworkEntry>) =>
+    update(entry, { ...patch, done: true, duration: Date.now() - entry.start });
 
   const originalFetch = window.fetch;
   // A Proxy keeps fetch's name and toString, in case the page checks them.
@@ -157,45 +231,41 @@ export default defineUnlistedScript(() => {
     apply(target, thisArg, args: Parameters<typeof fetch>) {
       const [input, init] = args;
       let entry: NetworkEntry | undefined;
+      let requestCopy: Request | undefined;
       try {
-        const url = input instanceof Request ? input.url : input instanceof URL ? input.href : String(input);
-        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
-        entry = track('fetch', method, absolute(url));
+        const isRequest = input instanceof Request;
+        const url = isRequest ? input.url : input instanceof URL ? input.href : String(input);
+        const method = (init?.method ?? (isRequest ? input.method : 'GET')).toUpperCase();
+        entry = track('fetch', method, absolute(url), headerList(init?.headers ?? (isRequest ? input.headers : undefined)));
+        if (init?.body != null) {
+          entry.requestBody = describeBody(init.body);
+        } else if (isRequest && input.body) {
+          // fetch() consumes the Request's body, so copy it first.
+          requestCopy = input.clone();
+        }
       } catch {
         // Recording must never stop the request.
       }
       const result: Promise<Response> = Reflect.apply(target, thisArg, args);
       if (!entry) return result;
       const tracked = entry;
+      if (requestCopy) {
+        requestCopy.text().then(
+          (text) => update(tracked, { requestBody: clip(text) }),
+          () => {},
+        );
+      }
       result.then(
         async (response) => {
-          const status = response.status;
-          if (status >= 400) {
-            // Read a copy so the page still gets the original body.
-            let body: string | undefined;
-            try {
-              body = clip(await response.clone().text());
-            } catch {
-              body = '[response body not readable]';
-            }
-            finish(tracked, {
-              status,
-              statusText: response.statusText,
-              responseHeaders: [...response.headers],
-              responseBody: body,
-              requestHeaders: headerList(init?.headers ?? (input instanceof Request ? input.headers : undefined)),
-              requestBody: describeBody(init?.body),
-            });
-          } else {
-            finish(tracked, { status, statusText: response.statusText });
-          }
+          finish(tracked, {
+            status: response.status,
+            statusText: response.type === 'opaque' ? 'opaque (no-cors)' : response.statusText,
+            responseHeaders: [...response.headers],
+          });
+          update(tracked, { responseBody: await readResponseBody(response) });
         },
         (error: unknown) => {
-          finish(tracked, {
-            failed: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
-            requestHeaders: headerList(init?.headers ?? (input instanceof Request ? input.headers : undefined)),
-            requestBody: describeBody(init?.body),
-          });
+          finish(tracked, { failed: error instanceof Error ? `${error.name}: ${error.message}` : String(error) });
         },
       );
       return result;
@@ -221,47 +291,20 @@ export default defineUnlistedScript(() => {
   xhr.send = function (this: XMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null) {
     const meta = xhrMeta.get(this);
     if (meta) {
-      const entry = track('xhr', meta.method, meta.url);
+      const entry = track('xhr', meta.method, meta.url, meta.headers);
+      entry.requestBody = describeBody(body);
       let aborted = false;
       this.addEventListener('abort', () => (aborted = true));
       this.addEventListener('loadend', () => {
-        const status = this.status;
-        if (status === 0) {
-          finish(entry, {
-            failed: aborted ? 'Aborted' : 'Network error (no response: offline, CORS or blocked)',
-            requestHeaders: meta.headers,
-            requestBody: describeBody(body),
-          });
-        } else if (status >= 400) {
-          let responseBody: string;
-          try {
-            responseBody =
-              this.responseType === '' || this.responseType === 'text'
-                ? clip(this.responseText)
-                : this.responseType === 'json'
-                  ? clip(JSON.stringify(this.response))
-                  : `[${this.responseType} response]`;
-          } catch {
-            responseBody = '[response body not readable]';
-          }
-          const responseHeaders = this.getAllResponseHeaders()
-            .trim()
-            .split(/[\r\n]+/)
-            .filter(Boolean)
-            .map((line): [string, string] => {
-              const i = line.indexOf(':');
-              return [line.slice(0, i).trim(), line.slice(i + 1).trim()];
-            });
-          finish(entry, {
-            status,
-            statusText: this.statusText,
-            responseHeaders,
-            responseBody,
-            requestHeaders: meta.headers,
-            requestBody: describeBody(body),
-          });
+        if (this.status === 0) {
+          finish(entry, { failed: aborted ? 'Aborted' : 'Network error (no response: offline, CORS or blocked)' });
         } else {
-          finish(entry, { status, statusText: this.statusText });
+          finish(entry, {
+            status: this.status,
+            statusText: this.statusText,
+            responseHeaders: parseHeaderBlock(this.getAllResponseHeaders()),
+            responseBody: xhrResponseBody(this),
+          });
         }
       });
     }

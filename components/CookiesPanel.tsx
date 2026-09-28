@@ -8,6 +8,7 @@ import {
   type Cookie,
   type CookieInput,
 } from '@/utils/cookies';
+import { copyText } from '@/utils/clipboard';
 import { errorMessage } from '@/utils/format';
 import { useSelection } from '@/utils/useSelection';
 import { CookieForm } from './CookieForm';
@@ -116,7 +117,7 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
         sameSite,
         expirationDate,
       }));
-      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      await copyText(JSON.stringify(data, null, 2));
     }, `Copied ${toCopy.length} cookie(s) as JSON`);
 
   const closeEditor = useCallback(() => setEditing(null), []);
@@ -187,7 +188,7 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
                   <>
                     <IconButton
                       label="Copy value"
-                      onClick={() => run(() => navigator.clipboard.writeText(c.value), `Copied ${c.name}`)}
+                      onClick={() => run(() => copyText(c.value), `Copied ${c.name}`)}
                     >
                       <Copy />
                     </IconButton>

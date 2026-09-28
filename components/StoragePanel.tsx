@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Copy, Database, Pencil, Trash2 } from 'lucide-react';
+import { copyText } from '@/utils/clipboard';
 import { errorMessage } from '@/utils/format';
 import { readStorage, writeStorage, type PageStorageArea, type StorageEntry } from '@/utils/pageStorage';
 import { useSelection } from '@/utils/useSelection';
@@ -92,7 +93,7 @@ export function StoragePanel({
   const copySelected = () =>
     run(async () => {
       const data = Object.fromEntries(toCopy.map((e) => [e.key, e.value]));
-      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      await copyText(JSON.stringify(data, null, 2));
     }, `Copied ${toCopy.length} item(s) as JSON`);
 
   const closeEditor = useCallback(() => setEditing(null), []);
@@ -137,7 +138,7 @@ export function StoragePanel({
                 <>
                   <IconButton
                     label="Copy value"
-                    onClick={() => run(() => navigator.clipboard.writeText(entry.value), `Copied ${entry.key}`)}
+                    onClick={() => run(() => copyText(entry.value), `Copied ${entry.key}`)}
                   >
                     <Copy />
                   </IconButton>

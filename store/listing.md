@@ -43,7 +43,8 @@ Custom request headers
 
 Network
 • See the page's failed API calls (fetch and XHR): status, URL, timing and the response the server sent
-• Expand a call for the formatted JSON response, request payload and headers; copy it or copy as cURL
+• Expand any call for its request headers, request body, response headers and response body (JSON formatted), each with its own Copy button
+• Copy a call as cURL to replay it in a terminal, copy its URL, or copy all its details at once
 • Switch to All to see every call the page makes
 
 Console
@@ -91,7 +92,7 @@ How to test:
 3. Cookies tab: click Add, enter a name and value, and Save. The cookie appears in the list. Click the arrow next to its name to expand the full value; use Copy, Edit and Delete on the row.
 4. Local storage tab: Add an item (e.g. key "test", value "123"), reload the page and reopen the popup; the item is still there.
 5. Side panel: click the panel icon at the top right of the popup. The editor opens in the side panel; switch tabs and it shows the new tab's data. The icon at the top right of the panel closes it.
-6. Network tab: failed API calls the page makes appear under Errors; click one to see its response. All lists every fetch/XHR call.
+6. Network tab: failed API calls the page makes appear under Errors; All lists every fetch/XHR call. Click a call to see its headers and bodies; use Copy as cURL or the Copy button on each section.
 7. Console tab: messages the page logs appear in the list. Type `document.title` and press Enter; the page title is shown. Turn on "Capture from page load" and click Reload page to see messages from page load.
 8. Headers tab: Add a header (e.g. "X-Test: hello") for the site's domain, reload the page, and check DevTools > Network > Request Headers: X-Test is sent.
 
