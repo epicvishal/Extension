@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  ArrowDownUp,
   Cookie,
   Database,
   Globe,
@@ -11,6 +12,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { ConsolePanel } from '@/components/ConsolePanel';
+import { NetworkPanel } from '@/components/NetworkPanel';
 import { CookiesPanel } from '@/components/CookiesPanel';
 import { HeadersPanel } from '@/components/HeadersPanel';
 import { StoragePanel } from '@/components/StoragePanel';
@@ -23,6 +25,7 @@ const TABS = [
   { id: 'local', label: 'Local', title: 'Local storage', icon: Database },
   { id: 'session', label: 'Session', title: 'Session storage', icon: Timer },
   { id: 'headers', label: 'Headers', title: 'Headers', icon: Send },
+  { id: 'network', label: 'Network', title: 'Network', icon: ArrowDownUp },
   { id: 'console', label: 'Console', title: 'Console', icon: SquareTerminal },
 ] as const;
 
@@ -125,8 +128,9 @@ function App({ mode }: Props) {
                 }`}
               >
                 <Icon className="size-3.5" />
-                <span className="@md:hidden">{label}</span>
-                <span className="hidden @md:inline">{title}</span>
+                {/* Narrow side panel: icons only, plus the name of the tab that is open. */}
+                <span className={`@2xl:hidden ${active === id ? '' : 'hidden @sm:inline'}`}>{label}</span>
+                <span className="hidden @2xl:inline">{title}</span>
               </button>
             ))}
           </nav>
@@ -148,6 +152,7 @@ function App({ mode }: Props) {
                 <StoragePanel key={`session|${siteKey}`} tabId={page.id} area="sessionStorage" revision={revision} />
               )}
               {active === 'headers' && <HeadersPanel hostname={page.url.hostname} />}
+              {active === 'network' && <NetworkPanel key={siteKey} tabId={page.id} pageUrl={page.url} />}
               {active === 'console' && <ConsolePanel key={siteKey} tabId={page.id} pageUrl={page.url} />}
             </>
           )}

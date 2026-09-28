@@ -22,7 +22,7 @@ Copy these into Microsoft Partner Center when submitting.
 Site Data Editor
 
 ### Short description
-View, edit, copy and delete cookies, local/session storage and request headers, and use a console, for any website.
+View, edit, copy and delete cookies, local/session storage and request headers, and see failed API calls and a console, for any website.
 
 ### Description
 Site Data Editor is a simple developer tool for inspecting and changing the data websites keep in your browser. Click the toolbar icon on any page to see its cookies, local storage and session storage, and change them in place.
@@ -40,6 +40,11 @@ Local and session storage
 Custom request headers
 • Add headers such as Authorization or X-Tenant-Id for a domain
 • Turn each header on or off with a switch; rules are remembered
+
+Network
+• See the page's failed API calls (fetch and XHR): status, URL, timing and the response the server sent
+• Expand a call for the formatted JSON response, request payload and headers; copy it or copy as cURL
+• Switch to All to see every call the page makes
 
 Console
 • See the page's console messages (log, info, warning, error) and uncaught errors, with level filters and search
@@ -68,7 +73,7 @@ Use these if Partner Center or the reviewers ask why each permission is needed.
 | Permission | Why it is needed |
 |---|---|
 | `cookies` | To list, add, edit and delete the cookies of the website the user is viewing, which is the main feature. |
-| `scripting` | To read and write the page's localStorage and sessionStorage, and for the Console tab. Web storage and the page's console are only reachable from inside the page, so a small script runs in the active tab when the user opens those tabs. For the Console's optional "Capture from page load" switch, the extension registers that same packaged script for the one site the user turned it on for; turning the switch off removes it. |
+| `scripting` | To read and write the page's localStorage and sessionStorage, and for the Network and Console tabs. Web storage, the page's API calls and its console are only reachable from inside the page, so a small script runs in the active tab when the user opens those tabs. For the optional "Capture from page load" switch, the extension registers that same packaged script for the one site the user turned it on for; turning the switch off removes it. |
 | `declarativeNetRequest` | To add the custom request headers the user defines for a domain (Headers tab). No requests are blocked or redirected. |
 | `storage` | To remember the user's custom header rules between browser sessions. |
 | `sidePanel` | To let the user open the same editor in the browser's side panel, which stays open while switching tabs. |
@@ -86,7 +91,8 @@ How to test:
 3. Cookies tab: click Add, enter a name and value, and Save. The cookie appears in the list. Click the arrow next to its name to expand the full value; use Copy, Edit and Delete on the row.
 4. Local storage tab: Add an item (e.g. key "test", value "123"), reload the page and reopen the popup; the item is still there.
 5. Side panel: click the panel icon at the top right of the popup. The editor opens in the side panel; switch tabs and it shows the new tab's data. The icon at the top right of the panel closes it.
-6. Console tab: messages the page logs appear in the list. Type `document.title` and press Enter; the page title is shown. Turn on "Capture from page load" and click Reload page to see messages from page load.
-7. Headers tab: Add a header (e.g. "X-Test: hello") for the site's domain, reload the page, and check DevTools > Network > Request Headers: X-Test is sent.
+6. Network tab: failed API calls the page makes appear under Errors; click one to see its response. All lists every fetch/XHR call.
+7. Console tab: messages the page logs appear in the list. Type `document.title` and press Enter; the page title is shown. Turn on "Capture from page load" and click Reload page to see messages from page load.
+8. Headers tab: Add a header (e.g. "X-Test: hello") for the site's domain, reload the page, and check DevTools > Network > Request Headers: X-Test is sent.
 
 The extension makes no network requests of its own and collects no data.

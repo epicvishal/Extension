@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ChevronRight, Copy, CornerDownLeft, RotateCw, Search, Trash2 } from 'lucide-react';
+import { ChevronRight, Copy, CornerDownLeft, Search, Trash2 } from 'lucide-react';
 import { errorMessage } from '@/utils/format';
-import { getCaptureOnLoad, readLogs, runCode, setCaptureOnLoad, type LogLevel } from '@/utils/pageConsole';
+import { readLogs, runCode, type LogLevel } from '@/utils/pageHook';
+import { CaptureControls } from './CaptureControls';
 import { useToast } from './Toast';
-import { Button, IconButton, Switch } from './ui';
+import { Button, IconButton } from './ui';
 
 type Item =
   | { kind: 'log'; key: string; time: number; level: LogLevel; text: string }
@@ -57,7 +58,6 @@ export function ConsolePanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
   const [filter, setFilter] = useState('');
   const [code, setCode] = useState('');
   const [running, setRunning] = useState(false);
-  const [captureOnLoad, setCaptureOnLoadState] = useState(false);
   const [unavailable, setUnavailable] = useState('');
   const history = useRef<string[]>([]);
   const historyPos = useRef(-1);
@@ -107,10 +107,6 @@ export function ConsolePanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
       clearTimeout(timer);
     };
   }, [poll]);
-
-  useEffect(() => {
-    getCaptureOnLoad(pageUrl).then(setCaptureOnLoadState, () => {});
-  }, [pageUrl]);
 
   // Follow new output unless the user has scrolled up to read.
   useLayoutEffect(() => {
@@ -169,16 +165,6 @@ export function ConsolePanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
       } else {
         setCode(past[historyPos.current] ?? '');
       }
-    }
-  };
-
-  const toggleCapture = async (on: boolean) => {
-    try {
-      await setCaptureOnLoad(pageUrl, on);
-      setCaptureOnLoadState(on);
-      toast(on ? 'Capturing from page load. Reload the page to start' : 'Capture from page load turned off');
-    } catch (e) {
-      toast(errorMessage(e), 'error');
     }
   };
 
@@ -249,14 +235,7 @@ export function ConsolePanel({ tabId, pageUrl }: { tabId: number; pageUrl: URL }
             <Trash2 />
           </IconButton>
         </div>
-        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted">
-          <Switch label="Capture from page load on this site" checked={captureOnLoad} onChange={toggleCapture} />
-          <span className="truncate">Capture from page load</span>
-          <Button className="ml-auto h-6 px-2" onClick={() => browser.tabs.reload(tabId)} title="Reload the page">
-            <RotateCw />
-            <span className="hidden @xs:inline">Reload page</span>
-          </Button>
-        </div>
+        <CaptureControls tabId={tabId} pageUrl={pageUrl} />
       </div>
 
       <div
