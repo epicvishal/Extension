@@ -15,7 +15,7 @@ import { DataRow } from './DataRow';
 import { Details } from './Details';
 import { ListToolbar } from './ListToolbar';
 import { useToast } from './Toast';
-import { EmptyState, IconButton, Pill, Sheet } from './ui';
+import { EmptyState, IconButton, Pill, Sheet, SkeletonRows } from './ui';
 
 const SAME_SITE_LABEL: Record<string, string> = {
   lax: 'Lax',
@@ -29,21 +29,48 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
   const [filter, setFilter] = useState('');
   const [editing, setEditing] = useState<Cookie | 'new' | null>(null);
   const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(true);
   const { selected, toggle, setAll, clear } = useSelection();
   const toast = useToast();
 
   const load = useCallback(async () => {
     try {
-      setCookies(await listCookies(pageUrl));
+      const list = await listCookies(pageUrl);
+      setCookies(list);
       setLoadError('');
+      return list;
     } catch (e) {
       setLoadError(errorMessage(e));
+      return null;
+    } finally {
+      setLoading(false);
     }
   }, [pageUrl]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Keep the list live: reload when a cookie that applies to this page changes.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onChanged = ({ cookie }: { cookie: Cookie }) => {
+      const domain = cookie.domain.replace(/^\./, '');
+      if (pageUrl.hostname !== domain && !pageUrl.hostname.endsWith(`.${domain}`)) return;
+      clearTimeout(timer);
+      timer = setTimeout(load, 150);
+    };
+    browser.cookies.onChanged.addListener(onChanged);
+    return () => {
+      clearTimeout(timer);
+      browser.cookies.onChanged.removeListener(onChanged);
+    };
+  }, [pageUrl, load]);
+
+  const refresh = async () => {
+    const list = await load();
+    if (list) toast(`Up to date · ${list.length} cookie(s)`);
+  };
 
   const query = filter.toLowerCase();
   const visible = cookies.filter(
@@ -107,9 +134,12 @@ export function CookiesPanel({ pageUrl }: { pageUrl: URL }) {
         onAdd={() => setEditing('new')}
         onDeleteSelected={deleteSelected}
         onCopySelected={copySelected}
-        onRefresh={load}
+        onRefresh={refresh}
+        loading={loading}
       />
-      {loadError ? (
+      {loading ? (
+        <SkeletonRows />
+      ) : loadError ? (
         <EmptyState icon={<CookieIcon />} title="Couldn't read cookies" text={loadError} />
       ) : visible.length === 0 ? (
         <EmptyState

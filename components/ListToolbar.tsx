@@ -13,8 +13,9 @@ type Props = {
   onAdd: () => void;
   onDeleteSelected: () => void;
   onCopySelected?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<void>;
   hint?: string;
+  loading?: boolean;
 };
 
 export function ListToolbar(props: Props) {
@@ -22,6 +23,14 @@ export function ListToolbar(props: Props) {
   const someSelected = props.selectedCount > 0 && !allSelected;
   // Bulk delete asks for a second click instead of a dialog.
   const [confirming, setConfirming] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refresh = async () => {
+    if (!props.onRefresh || refreshing) return;
+    setRefreshing(true);
+    await Promise.all([props.onRefresh(), new Promise((r) => setTimeout(r, 400))]);
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (!confirming) return;
@@ -31,14 +40,14 @@ export function ListToolbar(props: Props) {
 
   useEffect(() => setConfirming(false), [props.selectedCount]);
 
-  const summary = [
+  const summary = props.loading ? ['Loading…'] : [
     props.filter ? `${props.total} of ${props.count} ${props.noun}` : `${props.count} ${props.noun}`,
     props.selectedCount ? `${props.selectedCount} selected` : '',
     props.hint ?? '',
   ].filter(Boolean);
 
   return (
-    <div className="sticky top-0 z-10 border-b border-border bg-bg/95 px-3 pt-2.5 pb-2 backdrop-blur">
+    <div className="sticky top-0 z-10 border-b border-border bg-bg px-3 pt-2.5 pb-2">
       <div className="flex items-center gap-1.5">
         <label className="flex size-7 shrink-0 cursor-pointer items-center justify-center" title="Select all">
           <input
@@ -78,8 +87,8 @@ export function ListToolbar(props: Props) {
             </Button>
           ))}
         {props.onRefresh && (
-          <IconButton label="Reload from page" onClick={props.onRefresh}>
-            <RotateCw />
+          <IconButton label="Reload from page" onClick={refresh} disabled={refreshing}>
+            <RotateCw className={refreshing ? 'animate-spin' : ''} />
           </IconButton>
         )}
         <Button variant="primary" onClick={props.onAdd}>

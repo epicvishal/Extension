@@ -16,13 +16,15 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id'];
 
+const activeTab = getActiveTab().catch(() => null);
+
 function App() {
   const [page, setPage] = useState<ActiveTab | null | undefined>(undefined);
   const [active, setActive] = useState<TabId>('cookies');
   const [iconFailed, setIconFailed] = useState(false);
 
   useEffect(() => {
-    getActiveTab().then(setPage, () => setPage(null));
+    activeTab.then(setPage);
   }, []);
 
   return (

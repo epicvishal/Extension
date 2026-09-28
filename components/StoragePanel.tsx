@@ -7,7 +7,7 @@ import { DataRow } from './DataRow';
 import { EntryForm } from './EntryForm';
 import { ListToolbar } from './ListToolbar';
 import { useToast } from './Toast';
-import { EmptyState, IconButton, Pill, Sheet } from './ui';
+import { EmptyState, IconButton, Pill, Sheet, SkeletonRows } from './ui';
 
 const AREA_LABEL: Record<PageStorageArea, string> = {
   localStorage: 'local storage',
@@ -22,17 +22,28 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
   const [filter, setFilter] = useState('');
   const [editing, setEditing] = useState<StorageEntry | 'new' | null>(null);
   const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(true);
   const { selected, toggle, setAll, clear } = useSelection();
   const toast = useToast();
 
   const load = useCallback(async () => {
     try {
-      setEntries(await readStorage(tabId, area));
+      const list = await readStorage(tabId, area);
+      setEntries(list);
       setLoadError('');
+      return list;
     } catch (e) {
       setLoadError(errorMessage(e));
+      return null;
+    } finally {
+      setLoading(false);
     }
   }, [tabId, area]);
+
+  const refresh = async () => {
+    const list = await load();
+    if (list) toast(`Up to date · ${list.length} item(s)`);
+  };
 
   useEffect(() => {
     load();
@@ -91,9 +102,12 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
         onAdd={() => setEditing('new')}
         onDeleteSelected={deleteSelected}
         onCopySelected={copySelected}
-        onRefresh={load}
+        onRefresh={refresh}
+        loading={loading}
       />
-      {loadError ? (
+      {loading ? (
+        <SkeletonRows />
+      ) : loadError ? (
         <EmptyState icon={<Database />} title={`Couldn't read ${AREA_LABEL[area]}`} text={loadError} />
       ) : visible.length === 0 ? (
         <EmptyState

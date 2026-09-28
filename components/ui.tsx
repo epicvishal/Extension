@@ -129,6 +129,22 @@ export function Pill({ tone = 'neutral', children }: { tone?: keyof typeof pillT
   );
 }
 
+export function SkeletonRows({ count = 6 }: { count?: number }) {
+  return (
+    <ul className="space-y-0.5 p-1.5" aria-busy="true" aria-label="Loading">
+      {Array.from({ length: count }, (_, i) => (
+        <li key={i} className="flex items-start gap-1 px-1.5 py-2">
+          <span className="mx-2 mt-0.5 size-3.5 shrink-0 animate-pulse rounded bg-subtle" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 animate-pulse rounded bg-subtle" style={{ width: `${30 + ((i * 17) % 35)}%` }} />
+            <div className="h-2.5 animate-pulse rounded bg-subtle" style={{ width: `${55 + ((i * 23) % 40)}%` }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function EmptyState({ icon, title, text }: { icon: ReactNode; title: string; text?: string }) {
   return (
     <div className="flex flex-col items-center px-6 py-10 text-center">
