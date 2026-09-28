@@ -38,7 +38,7 @@ export function DataRow({ checked, onToggle, title, value, pills, details, actio
           onClick={onRowClick}
           className={`min-w-0 flex-1 cursor-pointer py-1 ${dimmed ? 'opacity-50' : ''}`}
         >
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
             <button
               type="button"
               aria-expanded={open}
@@ -47,7 +47,7 @@ export function DataRow({ checked, onToggle, title, value, pills, details, actio
             >
               <ChevronRight className={`size-3 transition-transform ${open ? 'rotate-90' : ''}`} />
             </button>
-            <span {...{ [TEXT]: '' }} className="cursor-text truncate text-[12.5px] font-semibold text-fg">
+            <span {...{ [TEXT]: '' }} className="max-w-[calc(100%-22px)] cursor-text truncate text-[12.5px] font-semibold text-fg">
               {title}
             </span>
             {pills}

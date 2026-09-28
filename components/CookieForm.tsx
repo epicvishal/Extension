@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import type { Cookie, CookieInput, SameSite } from '@/utils/cookies';
-import { fromLocalInput, toLocalInput } from '@/utils/format';
-import { Field, Input, SheetForm, Textarea, ToggleChip } from './ui';
+import { useState } from "react";
+import type { Cookie, CookieInput, SameSite } from "@/utils/cookies";
+import { fromLocalInput, toLocalInput } from "@/utils/format";
+import { Field, Input, SheetForm, Textarea, ToggleChip } from "./ui";
 
 const ONE_YEAR = 365 * 24 * 60 * 60;
 
@@ -20,13 +20,13 @@ function initialInput(cookie: Cookie | undefined, pageUrl: URL): CookieInput {
     };
   }
   return {
-    name: '',
-    value: '',
+    name: "",
+    value: "",
     domain: pageUrl.hostname,
-    path: '/',
-    secure: pageUrl.protocol === 'https:',
+    path: "/",
+    secure: pageUrl.protocol === "https:",
     httpOnly: false,
-    sameSite: 'lax',
+    sameSite: "lax",
     hostOnly: true,
     expirationDate: Math.floor(Date.now() / 1000) + ONE_YEAR,
   };
@@ -41,25 +41,40 @@ type Props = {
 
 export function CookieForm({ cookie, pageUrl, onSave, onCancel }: Props) {
   const [input, setInput] = useState(() => initialInput(cookie, pageUrl));
-  const update = (patch: Partial<CookieInput>) => setInput((prev) => ({ ...prev, ...patch }));
+  const update = (patch: Partial<CookieInput>) =>
+    setInput((prev) => ({ ...prev, ...patch }));
   const isSession = input.expirationDate === undefined;
 
   return (
     <SheetForm onSubmit={() => onSave(input)} onCancel={onCancel}>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 @sm:grid-cols-2">
         <Field label="Name">
-          <Input value={input.name} onChange={(e) => update({ name: e.target.value })} autoFocus />
+          <Input
+            value={input.name}
+            onChange={(e) => update({ name: e.target.value })}
+            autoFocus
+          />
         </Field>
         <Field label="Domain">
-          <Input value={input.domain} onChange={(e) => update({ domain: e.target.value })} />
+          <Input
+            value={input.domain}
+            onChange={(e) => update({ domain: e.target.value })}
+          />
         </Field>
       </div>
       <Field label="Value">
-        <Textarea rows={5} value={input.value} onChange={(e) => update({ value: e.target.value })} />
+        <Textarea
+          rows={5}
+          value={input.value}
+          onChange={(e) => update({ value: e.target.value })}
+        />
       </Field>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 @md:grid-cols-3">
         <Field label="Path">
-          <Input value={input.path} onChange={(e) => update({ path: e.target.value })} />
+          <Input
+            value={input.path}
+            onChange={(e) => update({ path: e.target.value })}
+          />
         </Field>
         <Field label="SameSite">
           <select
@@ -73,26 +88,49 @@ export function CookieForm({ cookie, pageUrl, onSave, onCancel }: Props) {
             <option value="unspecified">Unspecified</option>
           </select>
         </Field>
-        <Field label="Expires">
-          <Input
-            type="datetime-local"
-            disabled={isSession}
-            value={isSession ? '' : toLocalInput(input.expirationDate!)}
-            onChange={(e) => e.target.value && update({ expirationDate: fromLocalInput(e.target.value) })}
-          />
-        </Field>
+        <div className="col-span-2 @md:col-span-1">
+          <Field label="Expires">
+            <Input
+              type="datetime-local"
+              disabled={isSession}
+              value={isSession ? "" : toLocalInput(input.expirationDate!)}
+              onChange={(e) =>
+                e.target.value &&
+                update({ expirationDate: fromLocalInput(e.target.value) })
+              }
+            />
+          </Field>
+        </div>
       </div>
       <div>
-        <span className="mb-1.5 block text-[11px] font-semibold text-muted">Flags</span>
+        <span className="mb-1.5 block text-[11px] font-semibold text-muted">
+          Flags
+        </span>
         <div className="flex flex-wrap gap-1.5">
-          <ToggleChip label="Secure" checked={input.secure} onChange={(secure) => update({ secure })} />
-          <ToggleChip label="HttpOnly" checked={input.httpOnly} onChange={(httpOnly) => update({ httpOnly })} />
-          <ToggleChip label="Host only" checked={input.hostOnly} onChange={(hostOnly) => update({ hostOnly })} />
+          <ToggleChip
+            label="Secure"
+            checked={input.secure}
+            onChange={(secure) => update({ secure })}
+          />
+          <ToggleChip
+            label="HttpOnly"
+            checked={input.httpOnly}
+            onChange={(httpOnly) => update({ httpOnly })}
+          />
+          <ToggleChip
+            label="Host only"
+            checked={input.hostOnly}
+            onChange={(hostOnly) => update({ hostOnly })}
+          />
           <ToggleChip
             label="Session"
             checked={isSession}
             onChange={(session) =>
-              update({ expirationDate: session ? undefined : Math.floor(Date.now() / 1000) + ONE_YEAR })
+              update({
+                expirationDate: session
+                  ? undefined
+                  : Math.floor(Date.now() / 1000) + ONE_YEAR,
+              })
             }
           />
         </div>

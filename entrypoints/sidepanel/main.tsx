@@ -5,6 +5,6 @@ import '@/assets/tailwind.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App mode="popup" />
+    <App mode="sidepanel" />
   </React.StrictMode>,
 );

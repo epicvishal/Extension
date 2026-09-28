@@ -8,6 +8,8 @@ Browser extension (Manifest V3) for Edge and Chrome. On any website, the popup l
 
 Selected cookies and storage items can be copied as JSON.
 
+Clicking the toolbar icon opens a popup, which the browser closes as soon as focus leaves it. The panel button at the top right of the popup opens the same editor in the side panel instead, which stays open across tab switches and follows the active tab.
+
 Built with WXT + React + TypeScript + Tailwind.
 
 ## Commands
@@ -26,6 +28,6 @@ Built with WXT + React + TypeScript + Tailwind.
 - Privacy policy (GitHub Pages from `docs/`): https://epicvishal.github.io/Extension/privacy.html
 
 ## Layout
-- `entrypoints/popup/` – popup shell and tabs
+- `entrypoints/popup/`, `entrypoints/sidepanel/` – the two ways to open the editor; both render `components/App.tsx`
 - `components/` – panels (cookies, storage, headers), forms and shared UI
 - `utils/` – browser API wrappers: `cookies.ts`, `pageStorage.ts`, `headers.ts`, `tab.ts`

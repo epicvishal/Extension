@@ -71,7 +71,10 @@ export function ListToolbar(props: Props) {
         {props.onCopySelected && (
           <Button disabled={!props.total} onClick={props.onCopySelected} title="Copy as JSON">
             <Copy />
-            {props.selectedCount ? `Copy ${props.selectedCount}` : 'Copy all'}
+            <span className="hidden @sm:inline">
+              {props.selectedCount ? `Copy ${props.selectedCount}` : 'Copy all'}
+            </span>
+            {props.selectedCount > 0 && <span className="@sm:hidden">{props.selectedCount}</span>}
           </Button>
         )}
         {props.selectedCount > 0 &&
@@ -93,10 +96,10 @@ export function ListToolbar(props: Props) {
         )}
         <Button variant="primary" onClick={props.onAdd}>
           <Plus />
-          Add
+          <span className="hidden @xs:inline">Add</span>
         </Button>
       </div>
-      <div className="mt-1.5 pl-9 text-[10.5px] text-faint">{summary.join(' · ')}</div>
+      <div className="mt-1.5 truncate pl-9 text-[10.5px] text-faint">{summary.join(' · ')}</div>
     </div>
   );
 }

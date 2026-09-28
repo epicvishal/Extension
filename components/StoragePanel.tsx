@@ -17,7 +17,15 @@ const AREA_LABEL: Record<PageStorageArea, string> = {
 // JSON values get a tag so they're easy to spot.
 const looksLikeJson = (value: string) => /^\s*[[{]/.test(value);
 
-export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorageArea }) {
+export function StoragePanel({
+  tabId,
+  area,
+  revision,
+}: {
+  tabId: number;
+  area: PageStorageArea;
+  revision: number;
+}) {
   const [entries, setEntries] = useState<StorageEntry[]>([]);
   const [filter, setFilter] = useState('');
   const [editing, setEditing] = useState<StorageEntry | 'new' | null>(null);
@@ -47,7 +55,7 @@ export function StoragePanel({ tabId, area }: { tabId: number; area: PageStorage
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, revision]);
 
   const query = filter.toLowerCase();
   const visible = entries.filter(
